@@ -1,0 +1,369 @@
+import React, { useState, useEffect, useRef } from 'react';
+import DashboardWidget from '../components/DashboardWidget';
+import { invoke } from "@tauri-apps/api/core";
+import { open } from '@tauri-apps/plugin-shell';
+
+interface Article {
+    title: string;
+    link: string;
+    source: string;
+    description?: string;
+}
+
+// Helper for smart truncation (Moved outside component for stability)
+const smartTruncate = (text: string, limit: number) => {
+    if (text.length <= limit) return text;
+
+    // Look for the last sentence terminator before the limit
+    const sub = text.substring(0, limit);
+    const lastPeriod = sub.lastIndexOf('.');
+    const lastExclam = sub.lastIndexOf('!');
+    const lastQuestion = sub.lastIndexOf('?');
+
+    // Find the latest occurrence of any terminator
+    const end = Math.max(lastPeriod, lastExclam, lastQuestion);
+
+    if (end > limit * 0.5) { // Ensure we don't cut off too early (must be at least 50% of limit)
+        return sub.substring(0, end + 1) + " (CONT)";
+    }
+
+    // Fallback if no good sentence end found: standard ellipsis
+    return sub.substring(0, limit - 7) + "... (CONT)";
+};
+
+const NewsTickerModule: React.FC<{ title: string }> = ({ title }) => {
+    // Manual Configuration Version - Forced Update
+    // Config State
+    const [feedUrls, setFeedUrls] = useState(() => localStorage.getItem('rss_feed_urls') || 'https://news.ycombinator.com/rss');
+    const [readTime, setReadTime] = useState(() => parseInt(localStorage.getItem('rss_read_time') || '20')); // Default 20s
+    const [truncationLimit, setTruncationLimit] = useState(() => parseInt(localStorage.getItem('rss_truncation_limit') || '350')); // Default 350
+    const [isConfiguring, setIsConfiguring] = useState(false);
+
+    // Temp Config State
+    const [tempUrls, setTempUrls] = useState(feedUrls);
+    const [tempReadTime, setTempReadTime] = useState(readTime);
+    const [tempTruncationLimit, setTempTruncationLimit] = useState(truncationLimit);
+
+    // Read State
+    const [readLinks, setReadLinks] = useState<Set<string>>(() => {
+        try {
+            return new Set(JSON.parse(localStorage.getItem('read_news_links') || '[]'));
+        } catch {
+            return new Set();
+        }
+    });
+
+    // Data State
+    const [articles, setArticles] = useState<Article[]>([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    // Display State
+    const [displayedText, setDisplayedText] = useState('');
+    const [isTyping, setIsTyping] = useState(true);
+
+    // Fetch RSS
+    useEffect(() => {
+        const fetchFeeds = async () => {
+            setLoading(true);
+            setError('');
+            try {
+                const urls = feedUrls.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+                if (urls.length === 0) {
+                    setArticles([]);
+                    setLoading(false);
+                    return;
+                }
+
+                const promises = urls.map(async (url) => {
+                    try {
+                        const xmlText = await invoke<string>('fetch_rss', { url });
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+                        const channelTitle = xmlDoc.querySelector("channel > title")?.textContent?.trim();
+                        const feedTitle = xmlDoc.querySelector("feed > title")?.textContent?.trim();
+                        let sourceName = channelTitle || feedTitle || "EXT_FEED";
+
+                        sourceName = sourceName.toUpperCase();
+
+                        const items = xmlDoc.querySelectorAll("item, entry");
+                        const parsed: Article[] = [];
+                        items.forEach(item => {
+                            const t = item.querySelector("title")?.textContent;
+                            let l = item.querySelector("link")?.textContent;
+                            if (!l) l = item.querySelector("link")?.getAttribute("href");
+
+                            let d = item.querySelector("description")?.textContent || item.querySelector("summary")?.textContent;
+                            if (d) {
+                                const tempDiv = document.createElement("div");
+                                tempDiv.innerHTML = d;
+                                d = tempDiv.textContent || tempDiv.innerText || "";
+
+                                // Apply Manual Configurable Truncation
+                                d = smartTruncate(d, truncationLimit);
+                            }
+
+                            if (t && l) {
+                                parsed.push({
+                                    title: t.toUpperCase(),
+                                    link: l,
+                                    source: sourceName,
+                                    description: d
+                                });
+                            }
+                        });
+                        return parsed.slice(0, 5);
+                    } catch (e) {
+                        console.warn(`Failed to fetch ${url}`, e);
+                        return [];
+                    }
+                });
+
+                const results = await Promise.all(promises);
+                const allArticles = results.flat();
+
+                if (allArticles.length > 0) {
+                    setArticles(allArticles);
+                } else {
+                    setError("NO DATA DECODED");
+                }
+            } catch (e: any) {
+                console.error("RSS Fetch Error", e);
+                setError("UPLINK FAILED");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchFeeds();
+        const interval = setInterval(fetchFeeds, 600000); // 10 mins
+        return () => clearInterval(interval);
+    }, [feedUrls, truncationLimit]); // Re-run if limit changes
+
+    // Typing Logic
+    useEffect(() => {
+        if (loading || articles.length === 0) return;
+
+        const article = articles[currentIndex];
+        if (!article) {
+            setCurrentIndex(0);
+            return;
+        }
+
+        const fullText = article.title;
+        let charIdx = 0;
+        let readTimer: ReturnType<typeof setTimeout>;
+
+        setIsTyping(true);
+        setDisplayedText('');
+
+        const typeTimer = setInterval(() => {
+            if (charIdx <= fullText.length) {
+                setDisplayedText(fullText.slice(0, charIdx));
+                charIdx++;
+            } else {
+                clearInterval(typeTimer);
+                setIsTyping(false);
+
+                readTimer = setTimeout(() => {
+                    setCurrentIndex(prev => (prev + 1) % articles.length);
+                }, readTime * 1000);
+            }
+        }, 30);
+
+        return () => {
+            clearInterval(typeTimer);
+            clearTimeout(readTimer);
+        };
+    }, [currentIndex, articles, loading, readTime]);
+
+    // Handlers
+    const handleSaveConfig = () => {
+        localStorage.setItem('rss_feed_urls', tempUrls);
+        localStorage.setItem('rss_read_time', tempReadTime.toString());
+        localStorage.setItem('rss_truncation_limit', tempTruncationLimit.toString());
+
+        setFeedUrls(tempUrls);
+        setReadTime(tempReadTime);
+        setTruncationLimit(tempTruncationLimit);
+
+        setIsConfiguring(false);
+        setCurrentIndex(0);
+    };
+
+    const handleLinkClick = async () => {
+        if (!isTyping && articles[currentIndex]) {
+            const link = articles[currentIndex].link;
+
+            const newReadLinks = new Set(readLinks);
+            newReadLinks.add(link);
+            setReadLinks(newReadLinks);
+            localStorage.setItem('read_news_links', JSON.stringify(Array.from(newReadLinks)));
+
+            await open(link);
+        }
+    };
+
+    const isCurrentRead = articles[currentIndex] && readLinks.has(articles[currentIndex].link);
+
+    const textStyle = {
+        fontSize: '1.2em',
+        lineHeight: '1.4',
+        color: isCurrentRead ? 'var(--color-dim-amber)' : 'var(--color-amber)',
+        textShadow: isCurrentRead
+            ? '2px 0 rgba(255, 0, 0, 0.7), -2px 0 rgba(0, 0, 255, 0.7)'
+            : '0 0 2px var(--color-amber)',
+        cursor: isTyping ? 'default' : 'pointer',
+        opacity: isCurrentRead ? 0.8 : 1,
+        transition: 'all 0.3s ease'
+    };
+
+    return (
+        <DashboardWidget title={title} onAction={() => setIsConfiguring(!isConfiguring)}>
+            {isConfiguring ? (
+                <div className="weather-config">
+                    <div style={{ fontSize: '0.8em', marginBottom: '5px' }}>ENTER FEED URLS (ONE PER LINE):</div>
+                    <textarea
+                        className="retro-input"
+                        value={tempUrls}
+                        onChange={e => setTempUrls(e.target.value)}
+                        rows={4}
+                        style={{
+                            resize: 'none',
+                            height: 'auto',
+                            minHeight: '60px',
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            whiteSpace: 'pre',
+                            overflowX: 'auto',
+                            overflowY: 'hidden',
+                            marginBottom: '10px'
+                        }}
+                    />
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+                        <div>
+                            <div style={{ fontSize: '0.7em', marginBottom: '2px' }}>READ TIME (SEC):</div>
+                            <input
+                                type="number"
+                                className="retro-input"
+                                value={tempReadTime}
+                                onChange={e => setTempReadTime(parseInt(e.target.value) || 20)}
+                                style={{ width: '100%' }}
+                                min="5"
+                            />
+                        </div>
+                        <div>
+                            <div style={{ fontSize: '0.7em', marginBottom: '2px' }}>MAX LENGTH (CHARS):</div>
+                            <input
+                                type="number"
+                                className="retro-input"
+                                value={tempTruncationLimit}
+                                onChange={e => setTempTruncationLimit(parseInt(e.target.value) || 350)}
+                                style={{ width: '100%' }}
+                                min="50"
+                                step="50"
+                            />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px', marginTop: 'auto' }}>
+                        <button className="retro-btn" onClick={handleSaveConfig} style={{ flex: 1 }}>SAVE & RELOAD</button>
+                        <button className="retro-btn" onClick={() => setIsConfiguring(false)} style={{ flex: 1 }}>CANCEL</button>
+                    </div>
+                </div>
+            ) : (
+                <div style={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    fontFamily: 'var(--font-mono)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                }}>
+                    {loading ? (
+                        <div className="blink-anim" style={{ margin: 'auto' }}>ESTABLISHING DATA LINK...</div>
+                    ) : error ? (
+                        <div style={{ color: 'var(--color-alert)', margin: 'auto' }}>ERROR: {error}</div>
+                    ) : (
+                        <>
+                            {/* Header: Headline (Fixed Height for stability) */}
+                            <div style={{ flexShrink: 0, marginBottom: '10px', minHeight: '3.4em' }}>
+                                <div
+                                    onClick={handleLinkClick}
+                                    style={{
+                                        cursor: isTyping ? 'default' : 'pointer',
+                                        position: 'relative',
+                                        display: 'inline-block'
+                                    }}
+                                >
+                                    <span style={textStyle}>
+                                        {displayedText}
+                                    </span>
+                                    {isTyping && (
+                                        <span className="cursor-block" style={{
+                                            display: 'inline-block',
+                                            width: '10px',
+                                            height: '1em',
+                                            background: 'var(--color-phosphor)',
+                                            marginLeft: '4px',
+                                            verticalAlign: 'bottom',
+                                            animation: 'blink 1s step-end infinite'
+                                        }}></span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Body: Description (Scrollable Area) */}
+                            <div style={{
+                                flexGrow: 1,
+                                overflowY: 'auto', // Restore scrolling
+                                fontSize: '0.9em',
+                                color: 'var(--color-light-grey)',
+                                lineHeight: '1.3',
+                                opacity: isTyping ? 0 : 1,
+                                transition: 'opacity 0.5s ease-in',
+                                minHeight: '0',
+                                paddingRight: '4px',
+                                marginBottom: '10px',
+                                wordWrap: 'break-word',
+                                whiteSpace: 'pre-wrap'
+                            }}>
+                                {articles[currentIndex] && articles[currentIndex].description}
+                            </div>
+
+                            {/* Footer: Source info (Fixed at bottom) */}
+                            {!isConfiguring && !loading && !error && articles[currentIndex] && (
+                                <div style={{
+                                    flexShrink: 0,
+                                    fontSize: '0.8em',
+                                    color: 'var(--color-light-grey)',
+                                    borderTop: '1px solid #333',
+                                    paddingTop: '5px',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'flex-start',
+                                    marginTop: 'auto'
+                                }}>
+                                    <span style={{
+                                        flex: 1,
+                                        marginRight: '10px',
+                                        wordWrap: 'break-word',
+                                        overflowWrap: 'anywhere',
+                                        whiteSpace: 'normal',
+                                        lineHeight: '1.2'
+                                    }}>SRC: {articles[currentIndex].source}</span>
+                                    <span style={{ whiteSpace: 'nowrap' }}>{currentIndex + 1}/{articles.length}</span>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            )}
+        </DashboardWidget>
+    );
+};
+
+export default NewsTickerModule;
