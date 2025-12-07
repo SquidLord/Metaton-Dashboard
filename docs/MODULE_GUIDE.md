@@ -54,11 +54,11 @@ Metaton uses global CSS variables (defined in `App.css`) to maintain its Cassett
 | Variable | Value | Usage |
 | :--- | :--- | :--- |
 | `--color-amber` | `#FFB000` | Primary text, borders, active elements. |
-| `--color-dark-amber`| `#cc8800` | Hover states, dimmed elements. |
-| `--color-bg` | `#0a0a0a` | Deep black background. |
-| `--color-surface` | `#141414` | Widget background (slightly lighter). |
+| `--color-phosphor` | `#33FF00` | Success states, active indicators, blink effects. |
+| `--color-black` | `#0a0a0a` | Deep black background. |
+| `--color-dark-grey`| `#1a1a1a` | Widget background, inactive headers. |
+| `--color-light-grey`| `#888888` | Muted text, borders, placeholders. |
 | `--color-alert` | `#FF3333` | Errors, warnings, destructive actions. |
-| `--color-phosphor` | `#33FF00` | Success states, active indicators. |
 
 ### Utility Classes
 

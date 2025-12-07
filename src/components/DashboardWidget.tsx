@@ -4,13 +4,22 @@ interface DashboardWidgetProps {
     title: string;
     children: React.ReactNode;
     onAction?: () => void;
+    onTitleClick?: () => void;
 }
 
-const DashboardWidget: React.FC<DashboardWidgetProps> = ({ title, children, onAction }) => {
+const DashboardWidget: React.FC<DashboardWidgetProps> = ({ title, children, onAction, onTitleClick }) => {
     return (
         <div className="dashboard-widget">
             <div className="widget-header">
-                <span className="widget-title glow-text">{title}</span>
+                <span
+                    className="widget-title glow-text"
+                    onClick={onTitleClick}
+                    style={{
+                        cursor: onTitleClick ? 'pointer' : 'default',
+                    }}
+                >
+                    {title}
+                </span>
                 {onAction && (
                     <button onClick={onAction} className="widget-action-btn" title="Configure" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'translateY(-2px)' }}>

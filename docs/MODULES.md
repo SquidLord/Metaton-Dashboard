@@ -15,6 +15,7 @@ This document details the functionality and configuration of each module current
   * **Safety**: Includes protection against malformed or missing dates.
 * **Read State**: Tracks clicked links (changes color) to mark them as "read".
 * **Smart Truncation**: Intelligently cuts descriptions at sentence boundaries.
+* **Archive View**: Click the module title (`// DATA FEED`) to toggle a scrollable list of all fetched articles overlaying the ticker.
 
 ### Configuration
 

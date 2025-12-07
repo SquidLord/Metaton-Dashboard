@@ -199,8 +199,8 @@ p,
 /* Widget Styles */
 .dashboard-widget {
   /* flex: 1 1 320px; */
-  flex: 1 1 45%;
-  /* Force 2-columns on most screens by asking for 45% width */
+  flex: 1 0 45%;
+  /* Force 2-columns, NO SHRINK to prevent squashing */
   min-width: 320px;
   /* Prevent getting too small on mobile */
 
@@ -209,6 +209,8 @@ p,
   min-height: 220px;
   /* Minimum effective height */
 
+  box-sizing: border-box;
+  /* Include padding/border in width */
   border: 1px solid #444;
   background: rgba(20, 20, 20, 0.85);
   /* Proper opacity */
@@ -224,11 +226,12 @@ p,
   flex-direction: column;
   justify-content: center;
   /* Center content vertically */
-}
-
-.widget-header {
-  display: flex;
-  align-items: center;
+  min-height: 0;
+  /* Crucial for nested scrollbars in flex */
+  overflow: hidden;
+  /* Prevent spillover */
+  position: relative;
+  /* Context for absolute children */
   margin-bottom: 16px;
 }
 
@@ -321,10 +324,6 @@ p,
   50% {
     opacity: 0;
   }
-}
-
-.blink-anim {
-  animation: blink 2s infinite;
 }
 
 /* Widget Action Button */
@@ -430,4 +429,40 @@ p,
 .icon-resetting svg {
   animation: shake-pulse 0.2s infinite;
   stroke: var(--color-alert) !important;
+}
+
+/* Retro Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-dark-grey);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-light-grey);
+  border: 1px solid var(--color-black);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-amber);
+}
+
+.retro-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.retro-scrollbar::-webkit-scrollbar-track {
+  background: #000;
+}
+
+.retro-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-light-grey);
+  border-radius: 0;
+}
+
+.retro-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-amber);
 }
