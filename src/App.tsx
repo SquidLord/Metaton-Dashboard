@@ -12,14 +12,14 @@ import ObliqueStrategiesModule from "./modules/ObliqueStrategiesModule";
 import NewsTickerModule from "./modules/NewsTickerModule";
 
 const MODULES_CONFIG = [
-    { id: 'time', label: 'Time Module', component: TimeModule, props: { title: '// CHRONO' } },
-    { id: 'weather', label: 'Weather Module', component: WeatherModule, props: { title: '// ATMOS' } },
-    { id: 'system', label: 'System Monitor', component: SystemMonitor, props: { title: '// SYSTEM MON' } },
-    { id: 'network', label: 'Network Traffic', component: NetworkModule, props: { title: '// NETLINK' } },
-    { id: 'notes', label: 'Captain\'s Log', component: NotesModule, props: { title: '// LOG ENTRY' } },
-    { id: 'pomodoro', label: 'Pomodoro Timer', component: PomodoroModule, props: { title: '// WORK CYCLE' } },
-    { id: 'oblique', label: 'Oblique Strategies', component: ObliqueStrategiesModule, props: { title: '// STRATEGIES' } },
-    { id: 'news', label: 'News Wire', component: NewsTickerModule, props: { title: '// DATA FEED' } },
+    { id: 'time', label: 'Time Module', component: TimeModule, props: { title: 'Time' } },
+    { id: 'weather', label: 'Weather Module', component: WeatherModule, props: { title: 'Weather' } },
+    { id: 'system', label: 'System Monitor', component: SystemMonitor, props: { title: 'System' } },
+    { id: 'network', label: 'Network Traffic', component: NetworkModule, props: { title: 'Network' } },
+    { id: 'notes', label: 'Captain\'s Log', component: NotesModule, props: { title: 'Notes' } },
+    { id: 'pomodoro', label: 'Pomodoro Timer', component: PomodoroModule, props: { title: 'Pomodoro' } },
+    { id: 'oblique', label: 'Oblique Strategies', component: ObliqueStrategiesModule, props: { title: 'Strategies' } },
+    { id: 'news', label: 'News Wire', component: NewsTickerModule, props: { title: 'News' } },
 ];
 
 function App() {
@@ -102,7 +102,7 @@ function App() {
 
     return (
         <div className="container">
-            <div className="crt-overlay" />
+
 
             <main className="dashboard-grid">
                 <header className="top-bar">
@@ -130,12 +130,15 @@ function App() {
                             style={{ cursor: 'pointer', transition: 'all 0.2s' }}
                             title="Long Press to Reset"
                         >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-phosphor)" strokeWidth="2">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--md-sys-color-primary)" strokeWidth="2">
                                 <circle cx="12" cy="12" r="10" />
                                 <line x1="12" y1="2" x2="12" y2="22" />
                                 <line x1="2" y1="12" x2="22" y2="12" />
                             </svg>
                         </div>
+                        <span style={{ fontSize: '18px', fontWeight: 500, fontFamily: 'var(--font-sans)', color: 'var(--md-sys-color-on-background)' }}>
+                            Metaton
+                        </span>
 
                         {/* Dropdown Menu */}
                         {showSettings && (
@@ -159,7 +162,7 @@ function App() {
                         <svg width="16" height="16" viewBox="0 0 16 16">
                             <circle
                                 cx="8" cy="8" r="6"
-                                fill={isOnline ? "var(--color-phosphor)" : "var(--color-alert)"}
+                                fill={isOnline ? "var(--md-sys-color-tertiary)" : "var(--md-sys-color-error)"}
                                 className={isOnline ? "blink-anim" : "offline-icon"}
                             />
                         </svg>
