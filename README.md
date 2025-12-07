@@ -17,6 +17,12 @@
   - **Captain's Log**: Local-storage based scratchpad.
 - **Extensible**: Easily add new React-based modules (see [Module Guide](docs/MODULE_GUIDE.md)).
 
+## Documentation
+
+- **[Module Catalog](docs/MODULES.md)**: Detailed guide to all available widgets and their configuration.
+- **[Architecture Guide](docs/ARCHITECTURE.md)**: High-level system design, tech stack, and dev concepts.
+- **[Developer Guide](docs/MODULE_GUIDE.md)**: How to create new modules.
+
 ## Setup & Development
 
 ### Prerequisites

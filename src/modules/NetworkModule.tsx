@@ -3,8 +3,6 @@ import DashboardWidget from '../components/DashboardWidget';
 import { invoke } from "@tauri-apps/api/core";
 
 const NetworkModule: React.FC<{ title: string }> = ({ title }) => {
-    const [rx, setRx] = useState(0); // Received bytes
-    const [tx, setTx] = useState(0); // Transmitted bytes
     const [prevRx, setPrevRx] = useState(0);
     const [prevTx, setPrevTx] = useState(0);
     const [rxSpeed, setRxSpeed] = useState(0); // Bytes per second
@@ -24,8 +22,6 @@ const NetworkModule: React.FC<{ title: string }> = ({ title }) => {
 
                 setPrevRx(currentRx);
                 setPrevTx(currentTx);
-                setRx(currentRx);
-                setTx(currentTx);
             } catch (e) {
                 console.error("Failed to fetch network stats:", e);
             }

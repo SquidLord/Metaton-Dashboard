@@ -14,12 +14,15 @@ interface WeatherData {
 }
 
 // Simple Retro Weather Icons (ASCII/Text)
+// Simple Retro Weather Icons (ASCII/Text)
 const getWeatherIcon = (code: number) => {
     if (code === 0) return '☼'; // Clear sky
     if (code >= 1 && code <= 3) return '☁'; // Cloudy
     if (code >= 45 && code <= 48) return '≡'; // Fog
     if (code >= 51 && code <= 67) return '☂'; // Rain
+    if (code >= 80 && code <= 82) return '☂'; // Rain Showers
     if (code >= 71 && code <= 77) return '❄'; // Snow
+    if (code >= 85 && code <= 86) return '❄'; // Snow Showers
     if (code >= 95) return '⚡'; // Thunderstorm
     return '?';
 };
@@ -27,7 +30,11 @@ const getWeatherIcon = (code: number) => {
 const getWeatherDesc = (code: number) => {
     if (code === 0) return 'CLEAR';
     if (code >= 1 && code <= 3) return 'CLOUDY';
-    if (code >= 51) return 'PRECIP';
+    if (code >= 45 && code <= 48) return 'FOG';
+    if (code >= 51 && code <= 67) return 'RAIN';
+    if (code >= 80 && code <= 82) return 'SHOWERS';
+    if (code >= 71 && code <= 77) return 'SNOW';
+    if (code >= 85 && code <= 86) return 'SNOW';
     if (code >= 95) return 'STORM';
     return 'UNK';
 }
@@ -54,7 +61,7 @@ const WeatherModule: React.FC<{ title: string }> = ({ title }) => {
     // Search State
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
-    const [isSearching, setIsSearching] = useState(false);
+
 
     // Save location when it changes
     useEffect(() => {
@@ -152,7 +159,7 @@ const WeatherModule: React.FC<{ title: string }> = ({ title }) => {
 
     const handleSearch = async () => {
         if (!searchQuery) return;
-        setIsSearching(true);
+
         try {
             // Nominatim Search
             const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
@@ -170,7 +177,7 @@ const WeatherModule: React.FC<{ title: string }> = ({ title }) => {
         } catch (e) {
             console.error("Geocoding failed", e);
         }
-        setIsSearching(false);
+
     };
 
     const selectLocation = (result: any) => {

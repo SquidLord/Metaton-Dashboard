@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardWidget from '../components/DashboardWidget';
 import { invoke } from "@tauri-apps/api/core";
 import { open } from '@tauri-apps/plugin-shell';
@@ -7,6 +7,7 @@ interface Article {
     title: string;
     link: string;
     source: string;
+    date: Date;
     description?: string;
 }
 
@@ -95,6 +96,19 @@ const NewsTickerModule: React.FC<{ title: string }> = ({ title }) => {
                             let l = item.querySelector("link")?.textContent;
                             if (!l) l = item.querySelector("link")?.getAttribute("href");
 
+                            // Date Parsing
+                            const dateStr = item.querySelector("pubDate")?.textContent
+                                || item.querySelector("updated")?.textContent
+                                || item.querySelector("date")?.textContent;
+
+                            let pubDate = new Date(0); // Default to Epoch
+                            if (dateStr) {
+                                const parsedDate = new Date(dateStr);
+                                if (!isNaN(parsedDate.getTime())) {
+                                    pubDate = parsedDate;
+                                }
+                            }
+
                             let d = item.querySelector("description")?.textContent || item.querySelector("summary")?.textContent;
                             if (d) {
                                 const tempDiv = document.createElement("div");
@@ -110,11 +124,36 @@ const NewsTickerModule: React.FC<{ title: string }> = ({ title }) => {
                                     title: t.toUpperCase(),
                                     link: l,
                                     source: sourceName,
-                                    description: d
+                                    description: d || "",
+                                    date: pubDate
                                 });
                             }
                         });
-                        return parsed.slice(0, 5);
+
+
+                        // Logic: All entries from last 3 days unless < 5, then take most recent 5
+                        const now = new Date();
+                        const threeDaysAgo = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
+
+                        // Sort by date (descending) - Safe Sort with Explicit NaN Checks
+                        parsed.sort((a, b) => {
+                            const timeA = a.date.getTime();
+                            const timeB = b.date.getTime();
+                            // Handle Invalid Dates safely
+                            if (isNaN(timeA) && isNaN(timeB)) return 0;
+                            if (isNaN(timeA)) return 1; // Invalid dates go last
+                            if (isNaN(timeB)) return -1;
+                            return timeB - timeA;
+                        });
+
+                        const recentArticles = parsed.filter(a => a.date >= threeDaysAgo);
+
+                        if (recentArticles.length >= 5) {
+                            return recentArticles;
+                        } else {
+                            // Fallback to top 5 regardless of date
+                            return parsed.slice(0, 5);
+                        }
                     } catch (e) {
                         console.warn(`Failed to fetch ${url}`, e);
                         return [];
