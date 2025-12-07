@@ -19,6 +19,10 @@
   - **Captain's Log**: Local-storage based scratchpad.
 - **Extensible**: Easily add new React-based modules (see [Module Guide](docs/MODULE_GUIDE.md)).
 
+## Downloads
+
+Latest installers (MSI and Exe) are available on the [GitHub Releases Page](https://github.com/SquidLord/Metaton-Dashboard/releases).
+
 ## Documentation
 
 - **[Module Catalog](docs/MODULES.md)**: Detailed guide to all available widgets and their configuration.
@@ -59,7 +63,10 @@ Create a standalone executable:
 npm run tauri build
 ```
 
-The output binary will be located in `src-tauri/target/release`.
+The output binary and installers will be located in:
+
+- **Executable**: `src-tauri/target/release/metaton.exe`
+- **Installers**: `src-tauri/target/release/bundle/nsis` (Setup.exe) and `src-tauri/target/release/bundle/msi` (.msi)
 
 ## Project Structure
 
