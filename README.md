@@ -1,5 +1,7 @@
 # Metaton
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **Metaton** is a modular, retro-futuristic dashboard application built with [Tauri](https://tauri.app/), [React](https://reactjs.org/), and [TypeScript](https://www.typescriptlang.org/). It is designed to act as a "second screen" productivity companion, featuring a distinctive cassette futurism aesthetic.
 
 ## Features
