@@ -235,6 +235,12 @@ p,
   margin-bottom: 16px;
 }
 
+.widget-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .widget-title {
   font-size: 18px;
   font-weight: bold;
@@ -245,7 +251,8 @@ p,
 .widget-decoration-line {
   height: 2px;
   background: var(--color-dark-grey);
-  width: 100%;
+  flex-grow: 1;
+  /* Fill remaining space */
   position: relative;
 }
 

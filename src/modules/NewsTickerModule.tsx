@@ -126,7 +126,7 @@ const NewsTickerModule: React.FC<{ title: string }> = ({ title }) => {
                         items.forEach(item => {
                             const t = item.querySelector("title")?.textContent;
                             let l = item.querySelector("link")?.textContent;
-                            if (!l) l = item.querySelector("link")?.getAttribute("href");
+                            if (!l) l = item.querySelector("link")?.getAttribute("href") || undefined;
 
                             // Date Parsing
                             const dateStr = item.querySelector("pubDate")?.textContent
@@ -384,7 +384,7 @@ const NewsTickerModule: React.FC<{ title: string }> = ({ title }) => {
                                 FEED CONTENTS ({articles.length})
                             </div>
                             <div className="retro-scrollbar" style={{ flexGrow: 1, overflowY: 'auto' }}>
-                                {[...articles].reverse().map((art, idx) => {
+                                {[...articles].reverse().map((art) => {
                                     const isRead = readLinks.has(art.link);
                                     const isCurrent = articles[currentIndex] && articles[currentIndex].link === art.link;
 

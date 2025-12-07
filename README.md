@@ -1,4 +1,4 @@
-# Metaton
+# Metaton v0.2.1
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
